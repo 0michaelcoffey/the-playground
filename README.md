@@ -3,7 +3,7 @@
 My personal AI experiment hub — built with Claude, hosted on GitHub Pages.
 
 ## Live site
-`https://YOUR-USERNAME.github.io/the-playground`
+`https://0michaelcoffey.github.io/the-playground`
 
 ## Folder structure
 ```
