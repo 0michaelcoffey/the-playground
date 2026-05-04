@@ -22,25 +22,27 @@ const CATEGORIES = {
 };
 
 const EXPERIMENTS = [
-
   {
     name:     'ARIA — AI Chat Interface',
     category: 'ai-tools',
     icon:     '🤖',
-    desc:     'A sci-fi AI assistant with 5 switchable personas. Powered by Claude.',
+    desc:     'A sci-fi AI assistant with switchable personas. Powered by Claude.',
     status:   'live',
     file:     'experiments/ai-chat.html',
   },
-
+  {
+    name:     'Prompt Painter',
+    category: 'image-art',
+    icon:     '🎨',
+    desc:     'Generate detailed image prompts with technical style augmentation.',
+    status:   'live',
+    file:     'experiments/prompt-painter.html',
+  }
 ];
 
-// ---- Idea queue — things to build next ----
-// These show up as greyed-out inspiration cards.
 const IDEAS = [
-  { name: 'AI Chat Interface',    category: 'ai-tools',    icon: '🤖', desc: 'Custom chatbot with a persona and memory.' },
   { name: 'Live Data Explorer',   category: 'data-viz',    icon: '📡', desc: 'Visualise any dataset interactively.' },
   { name: 'AI Text Adventure',    category: 'games',       icon: '🎮', desc: 'Infinite branching story engine powered by AI.' },
   { name: 'Story Forge',          category: 'creative',    icon: '✍️', desc: 'AI co-writer for stories, scripts & lore.' },
   { name: 'Smart Task Planner',   category: 'productivity',icon: '⚡', desc: 'AI breaks goals into actionable daily plans.' },
-  { name: 'Prompt Painter',       category: 'image-art',   icon: '🎨', desc: 'Generate detailed image prompts from ideas.' },
 ];
