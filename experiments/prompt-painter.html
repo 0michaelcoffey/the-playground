@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prompt Painter // Image Prompt Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080c14; --bg-panel: #0c1220; --bg-card: #0f1826;
+      --border: #1a2a44; --border-hi: #1e4080; --accent: #2b7fff;
+      --accent-dim: #1a4a99; --green: #1aba7a; --amber: #e89c2a;
+      --text-1: #d8e8ff; --text-2: #7a9cc4; --text-3: #3a5a80;
+      --font-mono: 'Share Tech Mono', monospace; --font-body: 'Exo 2', sans-serif;
+      --radius: 6px; --radius-lg: 10px;
+    }
+
+    body {
+      background: var(--bg); color: var(--text-1);
+      font-family: var(--font-body); margin: 0; min-height: 100vh;
+    }
+
+    .bg-grid { position: fixed; inset: 0; pointer-events: none; z-index: 0; background-image: linear-gradient(rgba(43,127,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(43,127,255,0.05) 1px, transparent 1px); background-size: 40px 40px; }
+    .scanline { position: fixed; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(43,127,255,0.4), transparent); animation: scandown 6s linear infinite; pointer-events: none; z-index: 1; }
+    @keyframes scandown { 0% { top: 0; } 100% { top: 100vh; } }
+
+    .shell { position: relative; z-index: 10; max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+    .back-link { font-family: var(--font-mono); color: var(--accent); text-decoration: none; font-size: 13px; }
+    .title-area h1 { font-size: 22px; margin: 0; color: var(--text-1); }
+    .title-area p { font-family: var(--font-mono); font-size: 11px; color: var(--text-3); margin: 4px 0 0; }
+
+    .painter-grid { display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
+
+    .panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; }
+    .panel-label { font-family: var(--font-mono); font-size: 10px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem; display: block; }
+
+    textarea {
+      width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text-1);
+      padding: 1rem; border-radius: var(--radius); font-family: var(--font-body);
+      resize: vertical; min-height: 100px; margin-bottom: 1rem; box-sizing: border-box;
+    }
+
+    .options-group { display: flex; flex-direction: column; gap: 15px; }
+    .option-item { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 12px; color: var(--text-2); font-weight: 600; }
+    
+    select, input[type="text"] {
+      background: var(--bg); border: 1px solid var(--border); color: var(--text-1);
+      padding: 8px; border-radius: var(--radius); font-family: var(--font-body); font-size: 13px;
+    }
+
+    .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .toggle-chip {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 8px; font-size: 11px; text-align: center; cursor: pointer; transition: 0.2s;
+      color: var(--text-3); font-family: var(--font-mono);
+    }
+    .toggle-chip.active { border-color: var(--accent); color: var(--accent); background: rgba(43,127,255,0.1); }
+
+    .result-area { margin-top: 20px; background: rgba(43,127,255,0.03); border: 1px dashed var(--accent-dim); }
+    .output-box { font-family: var(--font-mono); font-size: 13px; color: var(--text-2); line-height: 1.6; white-space: pre-wrap; margin-bottom: 1.5rem; }
+
+    .btn-row { display: flex; gap: 10px; }
+    .primary-btn {
+      flex: 1; background: var(--accent); color: white; border: none; padding: 12px;
+      border-radius: var(--radius); font-family: var(--font-mono); font-weight: 600;
+      cursor: pointer; transition: 0.2s;
+    }
+    .secondary-btn {
+      background: transparent; border: 1px solid var(--border); color: var(--text-2);
+      padding: 12px 20px; border-radius: var(--radius); font-family: var(--font-mono);
+      cursor: pointer; transition: 0.2s;
+    }
+    .primary-btn:hover { background: #3d8bff; box-shadow: 0 0 15px rgba(43,127,255,0.4); }
+    .secondary-btn:hover { border-color: var(--text-3); color: var(--text-1); }
+
+    @media (max-width: 850px) { .painter-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+  <div class="bg-grid"></div>
+  <div class="scanline"></div>
+
+  <div class="shell">
+    <header>
+      <div class="title-area">
+        <h1>PROMPT <span>PAINTER</span></h1>
+        <p>// image prompt augmentation engine</p>
+      </div>
+      <a href="../index.html" class="back-link">← HUB</a>
+    </header>
+
+    <div class="painter-grid">
+      <div class="main-col">
+        <div class="panel">
+          <span class="panel-label">Core Subject</span>
+          <textarea id="subject-input" placeholder="Describe your basic image idea (e.g. 'A futuristic cat in a space suit')"></textarea>
+          
+          <span class="panel-label">Enhancements</span>
+          <div class="toggle-grid">
+            <div class="toggle-chip" onclick="toggleOption(this, 'Hyper-realistic')">HYPER-REAL</div>
+            <div class="toggle-chip" onclick="toggleOption(this, 'Octane Render')">OCTANE</div>
+            <div class="toggle-chip" onclick="toggleOption(this, 'Unreal Engine 5')">UE5</div>
+            <div class="toggle-chip" onclick="toggleOption(this, 'Cinematic Lighting')">CINEMATIC</div>
+            <div class="toggle-chip" onclick="toggleOption(this, 'Highly Detailed')">DETAIL+</div>
+            <div class="toggle-chip" onclick="toggleOption(this, '8k Resolution')">8K</div>
+          </div>
+        </div>
+
+        <div class="panel result-area" id="result-panel" style="display:none;">
+          <span class="panel-label">Generated Prompt</span>
+          <div class="output-box" id="final-prompt"></div>
+          <div class="btn-row">
+            <button class="secondary-btn" onclick="copyPrompt()">COPY</button>
+            <button class="primary-btn" onclick="launchInAI()">LAUNCH IN CLAUDE</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="side-col">
+        <div class="panel">
+          <span class="panel-label">Style Parameters</span>
+          <div class="options-group">
+            <div class="option-item">
+              <label>Artistic Style</label>
+              <select id="style-select">
+                <option value="">None / Realistic</option>
+                <option value="Cyberpunk Neon">Cyberpunk</option>
+                <option value="Studio Ghibli Anime">Ghibli Anime</option>
+                <option value="Oil Painting on Canvas">Oil Painting</option>
+                <option value="Minimalist Vector Art">Minimalist</option>
+                <option value="Dark Fantasy Concept Art">Dark Fantasy</option>
+                <option value="Synthwave Aesthetic">Synthwave</option>
+              </select>
+            </div>
+            <div class="option-item">
+              <label>Camera / Lens</label>
+              <select id="camera-select">
+                <option value="">Default</option>
+                <option value="Wide Angle Shot, 14mm">Wide Angle</option>
+                <option value="Close-up Macro Shot">Macro</option>
+                <option value="Low Angle Perspective">Low Angle</option>
+                <option value="Telephoto Lens, 85mm">Portrait Lens</option>
+                <option value="Aerial Drone View">Aerial</option>
+              </select>
+            </div>
+            <div class="option-item">
+              <label>Lighting</label>
+              <select id="light-select">
+                <option value="">Natural</option>
+                <option value="Golden Hour">Golden Hour</option>
+                <option value="Volumetric God Rays">God Rays</option>
+                <option value="Bioluminescent Glow">Bioluminescent</option>
+                <option value="Soft Rembrandt Lighting">Studio Soft</option>
+                <option value="Dramatic Chiaroscuro">High Contrast</option>
+              </select>
+            </div>
+            <button class="primary-btn" style="margin-top:10px;" onclick="generatePrompt()">PAINT PROMPT</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    let activeChips = [];
+
+    function toggleOption(el, val) {
+      el.classList.toggle('active');
+      if (el.classList.contains('active')) {
+        activeChips.push(val);
+      } else {
+        activeChips = activeChips.filter(item => item !== val);
+      }
+    }
+
+    function generatePrompt() {
+      const subject = document.getElementById('subject-input').value.trim();
+      if (!subject) return;
+
+      const style = document.getElementById('style-select').value;
+      const camera = document.getElementById('camera-select').value;
+      const light = document.getElementById('light-select').value;
+      
+      let prompt = subject;
+      
+      if (style) prompt += `, in the style of ${style}`;
+      if (camera) prompt += `, ${camera}`;
+      if (light) prompt += `, ${light} lighting`;
+      
+      if (activeChips.length > 0) {
+        prompt += `, ${activeChips.join(', ')}`;
+      }
+
+      document.getElementById('final-prompt').textContent = prompt;
+      document.getElementById('result-panel').style.display = 'block';
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    function copyPrompt() {
+      const text = document.getElementById('final-prompt').textContent;
+      navigator.clipboard.writeText(text);
+      alert('Prompt copied to neural link (clipboard).');
+    }
+
+    function launchInAI() {
+      const prompt = document.getElementById('final-prompt').textContent;
+      const instruction = `Expand this image prompt into a highly detailed, descriptive paragraph for Midjourney. Add atmospheric details, texture descriptions, and mood while keeping the core subject intact. \n\nPROMPT: ${prompt}`;
+      const url = `https://claude.ai/new?q=${encodeURIComponent(instruction)}`;
+      window.open(url, '_blank');
+    }
+  </script>
+</body>
+</html>
