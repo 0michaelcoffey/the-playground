@@ -23,17 +23,14 @@ const CATEGORIES = {
 
 const EXPERIMENTS = [
 
-  // ---- Add your experiments below this line ----
-  // Example (uncomment and edit to use):
-  //
-  // {
-  //   name:     'My First Chatbot',
-  //   category: 'ai-tools',
-  //   icon:     '🤖',
-  //   desc:     'A custom AI assistant with a sci-fi persona.',
-  //   status:   'live',
-  //   file:     'experiments/chatbot.html',
-  // },
+  {
+    name:     'ARIA — AI Chat Interface',
+    category: 'ai-tools',
+    icon:     '🤖',
+    desc:     'A sci-fi AI assistant with 5 switchable personas. Powered by Claude.',
+    status:   'live',
+    file:     'experiments/ai-chat.html',
+  },
 
 ];
 
