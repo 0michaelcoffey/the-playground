@@ -37,7 +37,15 @@ const EXPERIMENTS = [
     desc:     'Generate detailed image prompts with technical style augmentation.',
     status:   'live',
     file:     'experiments/prompt-painter.html',
-  }
+  },
+  {
+    name:     'API Vault & Nexus',
+    category: 'productivity',
+    icon:     '🔑',
+    desc:     'Secure, client-side repository for mounting and verifying live data extraction pipelines.',
+    status:   'live',
+    file:     'experiments/api-vault.html',
+  },
 ];
 
 const IDEAS = [
