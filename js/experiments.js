@@ -13,6 +13,7 @@
 // =============================================
 
 const CATEGORIES = {
+  'productivity':'API Vault & Nexus', 
   'ai-tools':    'AI Tools',
   'data-viz':    'Data Viz',
   'games':       'Games',
