@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Vault // Data Extraction Nexus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080c14; --bg-panel: #0c1220; --bg-card: #0f1826;
+      --border: #1a2a44; --border-hi: #1e4080; --accent: #2b7fff;
+      --accent-dim: #1a4a99; --green: #1aba7a; --amber: #e89c2a;
+      --text-1: #d8e8ff; --text-2: #7a9cc4; --text-3: #3a5a80;
+      --font-mono: 'Share Tech Mono', monospace; --font-body: 'Exo 2', sans-serif;
+      --radius: 6px; --radius-lg: 10px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text-1); font-family: var(--font-body); min-height: 100vh; overflow-x: hidden; }
+
+    .bg-grid { position: fixed; inset: 0; pointer-events: none; z-index: 0; background-image: linear-gradient(rgba(43,127,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(43,127,255,0.05) 1px, transparent 1px); background-size: 40px 40px; }
+    .scanline { position: fixed; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(43,127,255,0.4), transparent); animation: scandown 6s linear infinite; pointer-events: none; z-index: 1; }
+    @keyframes scandown { 0% { top: 0; } 100% { top: 100vh; } }
+
+    .shell { position: relative; z-index: 2; max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+    
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+    .back-link { font-family: var(--font-mono); color: var(--accent); text-decoration: none; font-size: 13px; }
+    .title-area h1 { font-size: 22px; margin: 0; color: var(--text-1); }
+    .title-area span { color: var(--accent); }
+    .title-area p { font-family: var(--font-mono); font-size: 11px; color: var(--text-3); margin: 4px 0 0; }
+
+    .vault-layout { display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
+    .panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+    .panel-label { font-family: var(--font-mono); font-size: 10px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+
+    /* Forms & Inputs */
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    label { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); text-transform: uppercase; }
+    input, select { background: var(--bg); border: 1px solid var(--border); color: var(--text-1); padding: 10px; border-radius: var(--radius); font-family: var(--font-body); font-size: 13px; }
+    input:focus, select:focus { outline: none; border-color: var(--accent); }
+
+    /* Buttons */
+    .btn { background: var(--accent); color: white; border: none; padding: 10px 16px; border-radius: var(--radius); font-family: var(--font-mono); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; text-transform: uppercase; }
+    .btn:hover { background: #3d8bff; box-shadow: 0 0 10px rgba(43,127,255,0.3); }
+    .btn-sec { background: transparent; border: 1px solid var(--border); color: var(--text-2); }
+    .btn-sec:hover { border-color: var(--accent-dim); color: var(--accent); }
+    .btn-danger { background: rgba(232, 80, 74, 0.1); border: 1px solid rgba(232, 80, 74, 0.3); color: var(--red); }
+    .btn-danger:hover { background: var(--red); color: white; }
+
+    /* Connection Cards */
+    .conn-list { display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 4px; }
+    .conn-card { background: var(--bg-card); border: 1px solid var(--border); padding: 12px; border-radius: var(--radius); cursor: pointer; transition: 0.2s; position: relative; }
+    .conn-card:hover { border-color: var(--border-hi); }
+    .conn-card.active { border-color: var(--accent); background: rgba(43,127,255,0.06); }
+    .conn-name { font-weight: 600; font-size: 13px; color: var(--text-1); margin-bottom: 4px; }
+    .conn-url { font-family: var(--font-mono); font-size: 10px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .conn-tag { position: absolute; top: 12px; right: 12px; font-family: var(--font-mono); font-size: 9px; padding: 2px 6px; border-radius: 4px; background: rgba(43,127,255,0.1); color: var(--text-2); }
+
+    /* Terminal Console Output */
+    .terminal-container { display: flex; flex-direction: column; flex: 1; min-height: 500px; }
+    .terminal-header { background: #0c1220; border: 1px solid var(--border); border-bottom: none; border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+    .terminal-title { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); }
+    .terminal-body { background: #04060a; border: 1px solid var(--border); border-radius: 0 0 var(--radius-lg) var(--radius-lg); padding: 1.5rem; flex: 1; font-family: var(--font-mono); font-size: 12px; color: #a4cef7; overflow: auto; white-space: pre-wrap; line-height: 1.5; }
+    
+    .status-indicator { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-3); }
+    .dot.live { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .dot.working { background: var(--amber); }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+  <div class="bg-grid"></div>
+  <div class="scanline"></div>
+
+  <div class="shell">
+    <header>
+      <div class="title-area">
+        <h1>API <span>VAULT</span></h1>
+        <p>// connection manager &amp; structured data extraction terminal</p>
+      </div>
+      <a href="../index.html" class="back-link">← HUB</a>
+    </header>
+
+    <div class="vault-layout">
+      <!-- Sidebar Control Panel -->
+      <div class="panel">
+        <span class="panel-label">Saved Connections</span>
+        <div class="conn-list" id="connections-container">
+          <!-- Dynamic Hook entries go here -->
+        </div>
+
+        <span class="panel-label">Register New API Connection</span>
+        <form id="api-form" onsubmit="saveConnection(event)" style="display: flex; flex-direction: column; gap: 12px;">
+          <div class="form-group">
+            <label>Endpoint Name</label>
+            <input type="text" id="api-name" required placeholder="e.g. Realtime Global Earthquakes">
+          </div>
+          <div class="form-group">
+            <label>Target Target URL</label>
+            <input type="url" id="api-url" required placeholder="https://api.example.com/data">
+          </div>
+          <div class="form-group">
+            <label>Extraction Context Category</label>
+            <select id="api-category">
+              <option value="Geology">Geology &amp; Earth Science</option>
+              <option value="Meteorology">Meteorology &amp; Climate</option>
+              <option value="Finance">Financial Datasets</option>
+              <option value="Demographics">Demographics &amp; Logistics</option>
+              <option value="Utility">General Systems Utility</option>
+            </select>
+          </div>
+          <button type="submit" class="btn">Vault Connection</button>
+        </form>
+      </div>
+
+      <!-- Main Display Console Terminal -->
+      <div class="terminal-container">
+        <div class="terminal-header">
+          <div class="terminal-title" id="terminal-endpoint-display">NEXUS STATUS: IDLE</div>
+          <div class="status-indicator">
+            <span class="dot" id="status-dot"></span>
+            <span id="status-text" style="color: var(--text-3)">STANDBY</span>
+          </div>
+        </div>
+        <div class="terminal-body" id="terminal-output">// System initialized. Select an API connector from the left console pane or mount a custom endpoint to perform raw telemetry extraction. Saved items safely cached across runtime frames via browser LocalStorage state arrays.</div>
+        
+        <div class="panel" style="border-radius: 0 0 var(--radius-lg) var(--radius-lg); border-top: none; background: #0a0f1a; flex-direction: row; gap: 10px;">
+          <button class="btn" id="execute-btn" disabled onclick="fireExtraction()">Execute Telemetry Pull</button>
+          <button class="btn btn-sec" id="copy-btn" disabled onclick="copyJSON()">Copy Raw Payload</button>
+          <button class="btn btn-danger" id="delete-btn" style="display:none; margin-left: auto;" onclick="deleteSelected()">Purge Entry</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Embedded standard target data extraction endpoints
+    const BOOT_PRESETS = [
+      { id: "p1", name: "USGS Global Earthquake Feed", url: "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minmagnitude=5.0&limit=5", category: "Geology" },
+      { id: "p2", name: "Open-Meteo Weather Tracking", url: "https://api.open-meteo.com/v1/forecast?latitude=-28.03&longitude=153.43&current_weather=true", category: "Meteorology" },
+      { id: "p3", name: "US Treasury Fiscal Data", url: "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/debt_to_penny?sort=-record_date&page[size]=1", category: "Finance" }
+    ];
+
+    let userConnections = JSON.parse(localStorage.getItem('pg_vault_connections')) || [];
+    let selectedItem = null;
+
+    function renderConnections() {
+      const container = document.getElementById('connections-container');
+      container.innerHTML = '';
+      
+      const allItems = [...BOOT_PRESETS, ...userConnections];
+      
+      allItems.forEach(item => {
+        const card = document.createElement('div');
+        card.className = `conn-card ${selectedItem && selectedItem.id === item.id ? 'active' : ''}`;
+        card.onclick = () => selectConnection(item);
+        
+        card.innerHTML = `
+          <div class="conn-name">${item.name}</div>
+          <div class="conn-url">${item.url}</div>
+          <span class="conn-tag">${item.category}</span>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function selectConnection(item) {
+      selectedItem = item;
+      renderConnections();
+      
+      document.getElementById('terminal-endpoint-display').textContent = `MOUNTED: ${item.name}`;
+      document.getElementById('terminal-output').textContent = `// Connection string ready.\n// Target: ${item.url}\n\nClick "EXECUTE TELEMETRY PULL" to pipeline the live dataset response into local framework view memory buffers.`;
+      
+      document.getElementById('execute-btn').removeAttribute('disabled');
+      document.getElementById('copy-btn').setAttribute('disabled', 'true');
+      
+      // Control deletion options (cannot delete core firmware presets)
+      const isPreset = BOOT_PRESETS.some(p => p.id === item.id);
+      document.getElementById('delete-btn').style.display = isPreset ? 'none' : 'block';
+      updateStatus('STANDBY', '');
+    }
+
+    async function fireExtraction() {
+      if (!selectedItem) return;
+      
+      updateStatus('RUNNING', 'working');
+      document.getElementById('terminal-output').textContent = `>> Establishing pipeline sync link to: ${selectedItem.url}\n>> Initializing handshake protocols...`;
+
+      try {
+        const response = await fetch(selectedItem.url);
+        if (!response.ok) throw new Error(`HTTP Error Stream Encountered: Status ${response.status}`);
+        
+        const data = await response.json();
+        
+        document.getElementById('terminal-output').textContent = JSON.stringify(data, null, 2);
+        updateStatus('CONNECTION SUCCESSFUL [200 OK]', 'live');
+        document.getElementById('copy-btn').removeAttribute('disabled');
+      } catch (err) {
+        document.getElementById('terminal-output').textContent = `!! EXHAUSTED TRANSMISSION STREAM REJECTION ERROR:\n\n${err.message}\n\n[Fix Action Needed]: Ensure target URL permits Cross-Origin Resource Sharing (CORS) connection handshakes inside client-side isolated browser engines.`;
+        updateStatus('LINK FAILURE', '');
+      }
+    }
+
+    function saveConnection(e) {
+      e.preventDefault();
+      const name = document.getElementById('api-name').value;
+      const url = document.getElementById('api-url').value;
+      const category = document.getElementById('api-category').value;
+      
+      const newConn = { id: 'u_' + Date.now(), name, url, category };
+      userConnections.push(newConn);
+      localStorage.setItem('pg_vault_connections', JSON.stringify(userConnections));
+      
+      document.getElementById('api-form').reset();
+      renderConnections();
+      selectConnection(newConn);
+    }
+
+    function deleteSelected() {
+      if (!selectedItem) return;
+      userConnections = userConnections.filter(c => c.id !== selectedItem.id);
+      localStorage.setItem('pg_vault_connections', JSON.stringify(userConnections));
+      selectedItem = null;
+      
+      document.getElementById('terminal-endpoint-display').textContent = 'NEXUS STATUS: IDLE';
+      document.getElementById('terminal-output').textContent = '// Current target entry purged from LocalStorage core arrays.';
+      document.getElementById('execute-btn').setAttribute('disabled', 'true');
+      document.getElementById('copy-btn').setAttribute('disabled', 'true');
+      document.getElementById('delete-btn').style.display = 'none';
+      
+      updateStatus('STANDBY', '');
+      renderConnections();
+    }
+
+    function copyJSON() {
+      const output = document.getElementById('terminal-output').textContent;
+      navigator.clipboard.writeText(output);
+      alert("Extracted JSON structured matrix cloned into active clip-plane memory arrays.");
+    }
+
+    function updateStatus(text, className) {
+      const dot = document.getElementById('status-dot');
+      const label = document.getElementById('status-text');
+      dot.className = `dot ${className}`;
+      label.textContent = text;
+      label.style.color = className === 'live' ? 'var(--green)' : className === 'working' ? 'var(--amber)' : 'var(--text-3)';
+    }
+
+    // Main Init sequence frame
+    renderConnections();
+  </script>
+</body>
+</html>
